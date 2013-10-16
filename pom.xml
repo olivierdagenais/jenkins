@@ -33,7 +33,7 @@ THE SOFTWARE.
 
   <groupId>org.jenkins-ci.main</groupId>
   <artifactId>pom</artifactId>
-  <version>1.536-SNAPSHOT</version>
+  <version>1.537-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Jenkins main module</name>
@@ -444,7 +444,7 @@ THE SOFTWARE.
         <plugin>
           <groupId>com.infradna.tool</groupId>
           <artifactId>bridge-method-injector</artifactId>
-          <version>1.4</version>
+          <version>1.9</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>

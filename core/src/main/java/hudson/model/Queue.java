@@ -920,9 +920,10 @@ public class Queue extends ResourceController implements Saveable {
      * <p>
      * This wakes up one {@link Executor} so that it will maintain a queue.
      */
-    public void scheduleMaintenance() {
+    @WithBridgeMethods(void.class)
+    public Future<?> scheduleMaintenance() {
         // LOGGER.info("Scheduling maintenance");
-        maintainerThread.submit();
+        return maintainerThread.submit();
     }
 
     /**
@@ -998,7 +999,7 @@ public class Queue extends ResourceController implements Saveable {
         while (!waitingList.isEmpty()) {
             WaitingItem top = peek();
 
-            if (!top.timestamp.before(new GregorianCalendar()))
+            if (top.timestamp.compareTo(new GregorianCalendar())>0)
                 break; // finished moving all ready items from queue
 
             top.leave(this);
@@ -1771,24 +1772,8 @@ public class Queue extends ResourceController implements Saveable {
                     else                        return new BecauseNodeIsBusy(nodes.iterator().next());
                 }
             } else {
-                CauseOfBlockage c;
-                for (Node node : allNodes) {
-                    if (node.toComputer().isPartiallyIdle()) {
-                        c = canTake(node);
-                        if (c==null)    break;
-                    }
-                }
-
                 return CauseOfBlockage.createNeedsMoreExecutor(Messages._Queue_WaitingForNextAvailableExecutor());
             }
-        }
-
-        private CauseOfBlockage canTake(Node node) {
-            for (QueueTaskDispatcher d : QueueTaskDispatcher.all()) {
-                CauseOfBlockage cause = d.canTake(node, this);
-                if (cause!=null)    return cause;
-            }
-            return null;
         }
 
         @Override
