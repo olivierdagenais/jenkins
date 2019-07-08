@@ -65,8 +65,10 @@ import hudson.widgets.HistoryWidget.Adapter;
 import hudson.widgets.Widget;
 import java.awt.Color;
 import java.awt.Paint;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -78,6 +80,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
@@ -312,9 +315,49 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
         catch (IOException ignored) {
             final Path pathToFile = Util.fileToPath(nextBuildNumberFile.file);
             final String pathToLockedFile = pathToFile.toString();
-            LOGGER.log(Level.WARNING, "Could not save the next build number to file {0}.",
-                new Object[] {pathToLockedFile}
+            // initialize details with a default message
+            final StringBuilder details = new StringBuilder("The ProcessFinder couldn't be used, sorry.");
+            collectInfoAboutLockedFile(pathToLockedFile, details);
+            LOGGER.log(Level.WARNING, "Could not save the next build number to file {0}. {1}",
+                new Object[] {pathToLockedFile, details.toString()}
             );
+        }
+    }
+
+    static void collectInfoAboutLockedFile(final String pathToLockedFile, final StringBuilder dest) {
+        final String pathToProcessFinder = "C:/ProgramData/chocolatey/lib/ProcessFinder/bin/ProcessFinder.exe";
+        final File processFinderFile = new File(pathToProcessFinder);
+        try {
+            if (processFinderFile.isFile()) {
+                final ProcessBuilder pb = new ProcessBuilder();
+                pb.command(pathToProcessFinder, "--filepath", pathToLockedFile);
+                pb.redirectErrorStream(true);
+                final Process process = pb.start();
+                try (
+                    final InputStreamReader isr = new InputStreamReader(process.getInputStream());
+                    final BufferedReader br = new BufferedReader(isr);
+                ) {
+                    final StringBuilder isb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        isb.append(line).append('\n');
+                    }
+                    boolean finishedInTime = process.waitFor(10, TimeUnit.SECONDS);
+                    // clear the destination StringBuilder to remove the default message
+                    dest.setLength(0);
+                    dest.append("ProcessFinder was asked about this file and responded with:");
+                    dest.append('\n');
+                    dest.append(isb.toString());
+                    dest.append("ProcessFinder finished within timeout? ");
+                    dest.append(finishedInTime);
+                }
+            }
+        }
+        catch (IOException e) {
+            LOGGER.log(Level.INFO, "IOException when attempting to use ProcessFinder.", e);
+        }
+        catch (InterruptedException e) {
+            LOGGER.log(Level.INFO, "InterruptedException when attempting to use ProcessFinder.", e);
         }
     }
 
