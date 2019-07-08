@@ -43,6 +43,7 @@ import hudson.util.TextFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -61,7 +62,6 @@ import jenkins.model.ProjectNamingStrategy;
 
 import jenkins.model.queue.AsynchronousExecution;
 import jenkins.security.apitoken.ApiTokenTestHelper;
-import jenkins.util.io.LinesStream;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
@@ -193,7 +193,7 @@ public class JobTest {
         assertEquals(1, initialRunNumber);
 
         // purposely lock the file, preventing it from being saved
-        try (final LinesStream stream = nextBuildNumberFile.linesStream()) {
+        try (final RandomAccessFile raf = new RandomAccessFile(nextBuildNumberFile.file, "rws")) {
 
             final int secondRunNumber = project.assignBuildNumber();
             assertEquals(2, secondRunNumber);
