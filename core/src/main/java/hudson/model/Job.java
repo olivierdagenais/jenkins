@@ -311,7 +311,10 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
         }
         catch (IOException ignored) {
             final Path pathToFile = Util.fileToPath(nextBuildNumberFile.file);
-            LOGGER.log(Level.WARNING, "Could not save the next build number to file {0}.", pathToFile);
+            final String pathToLockedFile = pathToFile.toString();
+            LOGGER.log(Level.WARNING, "Could not save the next build number to file {0}.",
+                new Object[] {pathToLockedFile}
+            );
         }
     }
 
